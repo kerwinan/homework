@@ -1,9 +1,7 @@
 package dao
 
 import (
-	"database/sql"
 	xorm "github.com/go-xorm/xorm"
-	"github.com/pkg/errors"
 	"homework/exceptionhandle/dao/do"
 )
 
@@ -15,10 +13,14 @@ func newMysqlDb() {
 	// todo init mysql db connect
 }
 
-func (m *MysqlDb) GetUserInfoByGuid(guid string, info *do.UserInfo) (err error) {
-	_, err = m.syncEngine.Where("user_guid = ?", guid).Get(info)
-	if err == sql.ErrNoRows {
-		return errors.Wrap(err, "get user info")
+func (m *MysqlDb) GetUserInfoByName(userName string, clientType int32, info *[]do.UserInfo) (err error) {
+	session := m.syncEngine.NewSession()
+	if clientType != 0 {
+		session.Where("client_type = ?", clientType)
 	}
-	return
+	if len(userName) != 0 {
+		session.Where("user_name = ?", userName)
+	}
+	findSession := session.Clone()
+	return findSession.Find(info)
 }
