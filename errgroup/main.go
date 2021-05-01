@@ -13,7 +13,9 @@ import (
 	"homework/errgroup/service"
 	"os"
 	"os/signal"
+	"runtime"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -24,6 +26,8 @@ func main() {
 		fmt.Println(err)
 		return
 	}
+	/* TODO 此处是否需要使用 errgroup 进行管理 */
+	go report()
 	/* start go 1 */
 	g.Go(func() error {
 		return srv.Start()
@@ -50,5 +54,15 @@ func main() {
 			return errors.New(fmt.Sprintf("receive exit signal: %v", sig))
 		}
 	})
-	fmt.Println("main exit: ", g.Wait())
+	log.Debugf("main exit: ", g.Wait())
+}
+
+func report() {
+	ticker := time.NewTicker(time.Second * 5)
+	for _ = range ticker.C {
+		memStat := new(runtime.MemStats)
+		runtime.ReadMemStats(memStat)
+		info_msg := fmt.Sprintf("使用内存 %d KB, GO程数: %d.", memStat.Alloc/1024, runtime.NumGoroutine())
+		fmt.Println(info_msg)
+	}
 }
