@@ -12,5 +12,8 @@ package main
 
 func main() {
 	// todo something
-}
 
+	if err != nil {
+		return
+	}
+}
