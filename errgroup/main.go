@@ -58,7 +58,7 @@ func main() {
 }
 
 func report() {
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(time.Second * 60)
 	for _ = range ticker.C {
 		memStat := new(runtime.MemStats)
 		runtime.ReadMemStats(memStat)
