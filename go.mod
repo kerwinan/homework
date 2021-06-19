@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/gin-gonic/gin v1.7.1
+	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/go-xorm/xorm v0.7.9
 	github.com/google/martian v2.1.0+incompatible
 	github.com/kr/pretty v0.2.1 // indirect
