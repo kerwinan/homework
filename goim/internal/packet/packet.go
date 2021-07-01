@@ -19,7 +19,7 @@ const (
 )
 
 var (
-	_headerLength = 4 + 2 + 2 + 4 + 4
+	HeaderLength = 4 + 2 + 2 + 4 + 4
 )
 
 type IMPacket struct {
@@ -74,7 +74,7 @@ func Decode(data []byte) (pkt *IMPacket, remainData []byte, err error) {
 	pkt.Sequence = internal.BytesToInt32(data[12:16])
 	bodyLen := pkt.PacketLen - int32(pkt.HeaderLen)
 	pkt.Body = make([]byte, bodyLen)
-	copy(pkt.Body, data[_headerLength:int32(_headerLength)+bodyLen])
+	copy(pkt.Body, data[HeaderLength:int32(HeaderLength)+bodyLen])
 
 	remainData = make([]byte, int32(len(data))-pkt.PacketLen)
 	copy(remainData, data[pkt.PacketLen:])
