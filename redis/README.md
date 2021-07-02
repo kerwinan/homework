@@ -82,6 +82,18 @@ set 000001 1234567890  树莓派机器上,内存增长56B;PC上,内存增长72B;
 
 - key/value，均为int编码方式时，占用总内存为32+32=64B
 
+#### set 00001 1234
+
+内存增长32B，int编码，使用共享对象。
+
+32B=dictEntry结构体(24B，jemalloc分配32B)
+
+#### set 00001  abcdeabcdeabcdeabcdeabcdeabcdeabcdeabcdeabcd
+
+内存增长96B，embstr编码(value长度为44)。
+
+96B=dicEntry结构体(32B)+RedisObject结构体(16)+SDS()
+
 #### 疑问
 
 **1. set 000001 1234567890 结果为什么与分析的不一致？**
@@ -102,4 +114,24 @@ Type				string
 ```
 
 如上所示，通过工具显示，该key实际占用了56B(8+8+8+8+24)，因为jemalloc的分配策略内存会增长64B。但是通过`info memory`对比前后内存，发现增长了72B，多的8字节，该字节是什么数据？
+
+#### 命令介绍
+
+**object refcount**
+
+查看**指定key的value**被引用的次数。 默认情况下，redis-server初始化时，会创建一万个字符串对象， 这些对象包含了从 0 到 9999 的所有整数值， 当服务器需要用到值为 0 到 9999 的字符串对象时， 服务器就会使用这些共享对象， 而不是新创建对象。
+
+- 当创建一个大于9999的value时，redis会新建一个对象，此时查询结果为1
+- 当创建一个0-9999之间的value时，redis会使用共享对象中对应的预创建好的对象，此时通过该命令查询结果为**2147483647(NT_MAX = 2^31 - 1)**
+
+**object encoding**
+
+查看对象的编码格式
+
+![img](https://github.com/kerwinan/Pictures/blob/master/redis/redis-encoding-type.png?raw=true)
+
+- string
+  - **int编码** 可存储8个字节的数字，当数字长度大于20时，使用embstr编码
+  - **embstr编码** 当字符串长度小于等于44时，大于44使用raw编码
+  - **raw编码** 当字符串长度大于44时
 
