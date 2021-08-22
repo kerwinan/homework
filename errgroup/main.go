@@ -8,7 +8,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/google/martian/log"
+	"github.com/kerwinan/go/kit/log"
 	"golang.org/x/sync/errgroup"
 	"homework/errgroup/service"
 	"os"
@@ -19,42 +19,47 @@ import (
 )
 
 func main() {
+	// init log config
+	err := log.Init("./config/log.yaml")
+	if err != nil {
+		fmt.Printf("init log failed: %v\n", err)
+		return
+	}
 	c := make(chan struct{})
-	g, ctx := errgroup.WithContext(context.Background())
+	eg, ctx := errgroup.WithContext(context.Background())
 	srv, err := service.NewService(c)
 	if err != nil {
-		fmt.Println(err)
+		log.X.Errorf("err: %v", err)
 		return
 	}
 	/* TODO 此处是否需要使用 errgroup 进行管理 */
 	go report()
 	/* start go 1 */
-	g.Go(func() error {
+	eg.Go(func() error {
+		log.X.Debugf("http start")
 		return srv.Start()
 	})
 	/* start go 2 */
-	g.Go(func() error {
-		select {
-		case <-ctx.Done():
-			log.Errorf("errgroup exit")
-		case <-c:
-			log.Errorf("http server shutdown")
-		}
+	eg.Go(func() error {
+		<-ctx.Done()
+		log.X.Warnf("http stop")
 		return srv.Stop()
 	},
 	)
 	/* start go 3 */
 	ch := make(chan os.Signal, 0)
-	g.Go(func() error {
+	eg.Go(func() error {
 		signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM, syscall.SIGKILL)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case sig := <-ch:
-			return errors.New(fmt.Sprintf("receive exit signal: %v", sig))
+		for {
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			case sig := <-ch:
+				return errors.New(fmt.Sprintf("receive exit signal: %v", sig))
+			}
 		}
 	})
-	log.Debugf("main exit: ", g.Wait())
+	log.X.Debugf("main exit: ", eg.Wait())
 }
 
 func report() {
